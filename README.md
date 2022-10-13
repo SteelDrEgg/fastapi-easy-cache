@@ -1,7 +1,7 @@
 # Fastapi easy cache
 
 <hr>
-An easy to use tool for caching fastapi response
+An easy to use tool for caching fastapi returnings
 
 ### When should I use fastapi-easy-cache?
 1. Returning json serializable data
