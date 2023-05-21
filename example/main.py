@@ -9,7 +9,7 @@ app = FastAPI(version='1.0', title='testServer', docs_url='/docs')
 from route2 import rt2
 app.include_router(rt2)
 
-apiCache(dbPath='db/cache.db')
+apiCache(db_path='db/cache.db')
 
 @app.get('/testCache/{path}')
 @cache(expire=20)
