@@ -1,28 +1,29 @@
 from functools import wraps
-import base64, hashlib
+import hashlib
 import time, sqlite3, json
 
 db = ''
-pOc = ''
 
 # Initializing the module
 class apiCache():
-    def __init__(self, dbPath: str, peformance_or_capacity: str = 'peformance'):
+    def __init__(self, db_path: str, in_memory: bool = False):
         '''This module is for caching fastapi route
 
         This module uses sqlite to cache content, and use md5 as an identifier to each route
         Please note that this module is only for GET request and json serializable data
 
         Args:
-            dbPath: path to sqlite database, expected str
-            peformance_or_capacity: more peformance or capacity when calculating route id, epected 'peformance' or 'capacity'
+            db_path: path to sqlite database, expected str
+            in_memory: set up cache in memory, expected bool
 
         Returns:
             None
         '''
-        global db, pOc
-        db = dbPath
-        pOc = peformance_or_capacity
+        global db
+        if in_memory:
+            db = "file:{dbName}?mode=memory&cache=shared".format(dbName=hashlib.md5(db_path.encode()).hexdigest())
+        else:
+            db = db_path
         conn = sqlite3.connect(db)
 
         initCur = conn.cursor()
@@ -81,10 +82,10 @@ def getIdentifier(func, kwargs):
     else:
         identifier = func.__name__
 
-    if pOc == 'capacity':
-        identifier = base64.b64encode(hashlib.md5(identifier.encode()).digest())
-    else:
-        identifier = hashlib.md5(identifier.encode()).hexdigest()
+    # identifier took less space
+    # identifier = base64.b64encode(hashlib.md5(identifier.encode()).digest())
+    # identifier took more space
+    identifier = hashlib.md5(identifier.encode()).hexdigest()
 
     return identifier
 

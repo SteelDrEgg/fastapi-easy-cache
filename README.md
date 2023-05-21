@@ -33,12 +33,11 @@ The following code will
 ```python
 import fastapi_easy_cache
 
-fastapi_easy_cache.apiCache(dbPath='cachedb/cache.db',
-                              peformance_or_capacity='peformance')
+fastapi_easy_cache.apiCache(db_path='./temp/cache', in_memory=False)
 ```
 #### args
-    dbPath: path to sqlite database, expected str
-    peformance_or_capacity (optional): more peformance or capacity when calculating route id, epected 'peformance' or 'capacity'
+db_path: path to sqlite database
+in_memory: set up cache in memory, db_path will be database name when set to True
 
 
 ### Using
