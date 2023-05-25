@@ -21,10 +21,10 @@ class apiCache():
         '''
         global db
         if in_memory:
-            db = "file:{dbName}:memory&cache=shared".format(dbName=hashlib.md5(db_path.encode()).hexdigest())
+            db = "file:{dbName}?mode=memory&cache=shared".format(dbName=hashlib.md5(db_path.encode()).hexdigest())
         else:
             db = db_path
-        conn = sqlite3.connect(db)
+        conn = sqlite3.connect(db, check_same_thread=False)
 
         initCur = conn.cursor()
         try:
