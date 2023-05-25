@@ -1,7 +1,7 @@
 # Fastapi easy cache
 
 <hr>
-An easy to use tool for caching fastapi returnings
+An easy to use tool for caching fastapi returnings using sqlite as backend
 
 ### When should I use fastapi-easy-cache?
 1. Returning json serializable data
@@ -29,7 +29,7 @@ pip install fastapi-easy-cache
 
 The following code will
 1. create a sqlite database in **dbPath**
-2. using peformance mode when calculating route identifier
+2. sotore cache in filesystem
 ```python
 import fastapi_easy_cache
 
