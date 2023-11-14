@@ -9,7 +9,6 @@ from sqlalchemy.orm import sessionmaker
 
 sessionManager: scoped_session
 
-
 # Initializing the module
 class apiCache():
     def __init__(self, db_path: str, in_memory: bool = False):
