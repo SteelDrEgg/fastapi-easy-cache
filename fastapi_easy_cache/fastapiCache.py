@@ -9,6 +9,7 @@ from sqlalchemy.orm import sessionmaker
 
 sessionManager: scoped_session
 
+
 # Initializing the module
 class apiCache():
     def __init__(self, db_path: str, in_memory: bool = False):
@@ -40,10 +41,14 @@ class apiCache():
         newSession.commit()
         sessionManager.remove()
 
+
 # Executing querys to sqlite
-def exec(query, commit: bool = False, fetch: bool=False):
+def exec(query, commit: bool = False, fetch: bool = False, params: dict = None):
     newSession = sessionManager()
-    result = newSession.execute(text(query))
+    if params:
+        result = newSession.execute(text(query), params)
+    else:
+        result = newSession.execute(text(query))
     if commit:
         newSession.commit()
     if fetch:
@@ -55,16 +60,13 @@ def exec(query, commit: bool = False, fetch: bool=False):
 def add2cache(result, identifier, expire):
     data = json.dumps(result)
 
-    query = '''INSERT INTO fastapicache (identifier, data, time) VALUES ('{a}', '{b}', '{c}')'''.format(a=identifier,
-                                                                                                        b=data,
-                                                                                                        c=(int(time.time()) + expire))
-    exec(query, True)
-
+    query = '''INSERT INTO fastapicache (identifier, data, time) VALUES (:a, :b, :c)'''
+    exec(query, True, params={"a": identifier, "b": data, "c": (int(time.time()) + expire)})
 
 # Get cache
 def getCache(identifier):
-    query = 'select data, time from fastapicache where identifier="{a}"'.format(a=identifier)
-    data = exec(query, False, True)
+    query = 'select data, time from fastapicache where identifier=:a'
+    data = exec(query, False, True, params={"a": identifier})
     if data:
         if data[0][1] > int(time.time()):
             return json.loads(data[0][0])
@@ -73,16 +75,12 @@ def getCache(identifier):
     else:
         return None
 
-
 # Update expired cache
 def updataCache(result, identifier, expire):
     data = json.dumps(result)
     # query = '''UPDATE fastapicache SET identifier=?, data=?, time=? '''
-    query = '''UPDATE fastapicache SET identifier='{a}', data='{b}', time='{c}')'''.format(a=identifier,
-                                                                                           b=data,
-                                                                                           c=(int(time.time()) + expire))
-    exec(query, True)
-
+    query = '''UPDATE fastapicache SET identifier=:a, data=:b, time=:c)'''
+    exec(query, True, params={"a": identifier, "b": data, "c": (int(time.time()) + expire)})
 
 # Get route identifier
 def getIdentifier(func, kwargs):
@@ -99,7 +97,6 @@ def getIdentifier(func, kwargs):
     identifier = hashlib.md5(identifier.encode()).hexdigest()
 
     return identifier
-
 
 # Main decorator
 def cache(expire: int):
