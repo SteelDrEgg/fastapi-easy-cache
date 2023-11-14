@@ -21,10 +21,10 @@ class apiCache():
         '''
         global db
         if in_memory:
-            db = "file:{dbName}?mode=memory&cache=shared&uri=true".format(dbName=hashlib.md5(db_path.encode()).hexdigest())
+            db = "file:{dbName}:memory:?cache=shared&uri=true".format(dbName=db_path)
         else:
             db = db_path
-        conn = sqlite3.connect(db, check_same_thread=False)
+        conn = sqlite3.connect(db, check_same_thread=False, uri=True)
 
         initCur = conn.cursor()
         try:
@@ -37,13 +37,13 @@ class apiCache():
         conn.close()
 
 # Executing querys to sqlite
-def exec(query, commit: bool=False, *queryArgs):
-    conn = sqlite3.connect(db)
+def exec(query, commit: bool = False, *queryArgs):
+    conn = sqlite3.connect(db, uri=True)
     cursor = conn.cursor()
     cursor.execute(query, queryArgs)
     if commit:
         conn.commit()
-    data=cursor.fetchone()
+    data = cursor.fetchone()
     cursor.close()
     conn.close()
     return data
@@ -53,14 +53,14 @@ def add2cache(result, identifier, expire):
     data = json.dumps(result)
 
     query = '''INSERT INTO fastapicache (identifier, data, time) VALUES (?, ?, ?)'''
-    exec(query, True, *(identifier, data, int(time.time())+expire))
+    exec(query, True, *(identifier, data, int(time.time()) + expire))
 
 # Get cache
 def getCache(identifier):
-    query='select data, time from fastapicache where identifier=?'
-    data=exec(query, False, identifier)
+    query = 'select data, time from fastapicache where identifier=?'
+    data = exec(query, False, identifier)
     if data:
-        if data[1]>int(time.time()):
+        if data[1] > int(time.time()):
             return json.loads(data[0])
         else:
             return False
@@ -71,7 +71,7 @@ def getCache(identifier):
 def updataCache(result, identifier, expire):
     data = json.dumps(result)
     query = '''UPDATE fastapicache SET identifier=?, data=?, time=? '''
-    exec(query, True, *(identifier, data, int(time.time())+expire))
+    exec(query, True, *(identifier, data, int(time.time()) + expire))
 
 # Get route identifier
 def getIdentifier(func, kwargs):
@@ -94,15 +94,15 @@ def cache(expire: int):
     def decor(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            identifier=getIdentifier(func, kwargs)
-            cached=getCache(identifier)
+            identifier = getIdentifier(func, kwargs)
+            cached = getCache(identifier)
             if cached:
                 return cached
-            elif cached==False:
+            elif cached == False:
                 result = func(*args, **kwargs)
                 updataCache(result, identifier, expire)
                 return result
-            elif cached==None:
+            elif cached == None:
                 result = func(*args, **kwargs)
                 add2cache(result, identifier, expire)
                 return result
