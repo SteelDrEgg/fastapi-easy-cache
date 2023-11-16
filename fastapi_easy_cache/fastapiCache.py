@@ -78,7 +78,8 @@ def getCache(identifier):
 # Update expired cache
 def updataCache(result, identifier, expire):
     data = json.dumps(result)
-    query = '''UPDATE fastapicache SET identifier=:a, data=:b, time=:c'''
+    # query = '''UPDATE fastapicache SET identifier=?, data=?, time=? '''
+    query = '''UPDATE fastapicache SET identifier=:a, data=:b, time=:c)'''
     exec(query, True, params={"a": identifier, "b": data, "c": (int(time.time()) + expire)})
 
 # Get route identifier
