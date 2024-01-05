@@ -3,11 +3,20 @@ import hashlib
 import time, json
 
 import sqlalchemy.exc
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, text, inspect
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import sessionmaker
 
 sessionManager: scoped_session
+
+
+def initTable(session):
+    try:
+        session.execute(text('''create table fastapicache(identifier varchar, data TEXT, time integer);'''))
+    except sqlalchemy.exc.OperationalError:
+        session.execute(text('drop table fastapicache'))
+        session.execute(text('''create table fastapicache(identifier varchar, data TEXT, time integer);'''))
+    session.commit()
 
 
 # Initializing the module
@@ -25,7 +34,7 @@ class apiCache():
         Returns:
             None
         '''
-        global sessionManager
+        global sessionManager, eng
         if in_memory:
             eng = create_engine("sqlite+pysqlite:///file:{name}?mode=memory&cache=shared&uri=true".format(name=db_path))
         else:
@@ -33,18 +42,16 @@ class apiCache():
         sessionManager = scoped_session(sessionmaker(bind=eng))
 
         newSession = sessionManager()
-        try:
-            newSession.execute(text('''create table fastapicache(identifier varchar, data TEXT, time integer);'''))
-        except sqlalchemy.exc.OperationalError:
-            newSession.execute(text('drop table fastapicache'))
-            newSession.execute(text('''create table fastapicache(identifier varchar, data TEXT, time integer);'''))
-        newSession.commit()
+        initTable(newSession)
         sessionManager.remove()
 
 
 # Executing querys to sqlite
 def exec(query, commit: bool = False, fetch: bool = False, params: dict = None):
     newSession = sessionManager()
+    if not inspect(eng).has_table("fastapicache"):
+        initTable(newSession)
+
     if params:
         result = newSession.execute(text(query), params)
     else:
@@ -56,12 +63,14 @@ def exec(query, commit: bool = False, fetch: bool = False, params: dict = None):
         return data
     sessionManager.remove()
 
+
 # Add new cache
 def add2cache(result, identifier, expire):
     data = json.dumps(result)
 
     query = '''INSERT INTO fastapicache (identifier, data, time) VALUES (:a, :b, :c)'''
     exec(query, True, params={"a": identifier, "b": data, "c": (int(time.time()) + expire)})
+
 
 # Get cache
 def getCache(identifier):
@@ -75,12 +84,14 @@ def getCache(identifier):
     else:
         return None
 
+
 # Update expired cache
 def updataCache(result, identifier, expire):
     data = json.dumps(result)
     # query = '''UPDATE fastapicache SET identifier=?, data=?, time=? '''
     query = '''UPDATE fastapicache SET identifier=:a, data=:b, time=:c'''
     exec(query, True, params={"a": identifier, "b": data, "c": (int(time.time()) + expire)})
+
 
 # Get route identifier
 def getIdentifier(func, kwargs):
@@ -97,6 +108,7 @@ def getIdentifier(func, kwargs):
     identifier = hashlib.md5(identifier.encode()).hexdigest()
 
     return identifier
+
 
 # Main decorator
 def cache(expire: int):

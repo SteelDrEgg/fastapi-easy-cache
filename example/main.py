@@ -20,4 +20,4 @@ def testArg(path, arg1, arg2, request: Request):
     return data
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="127.0.0.1", port=5050, reload=True)
+    uvicorn.run("main:app", host="127.0.0.1", port=5055, reload=True)
